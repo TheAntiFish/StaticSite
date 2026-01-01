@@ -6,7 +6,7 @@ import sys
 import os
 import shutil
 
-def generate_page(from_path, template_path, dest_path):
+def generate_page(from_path, template_path, dest_path, basepath):
     print(f"Generating page from {from_path} to {dest_path} using {template_path}.")
 
     markdown = ""
@@ -22,6 +22,8 @@ def generate_page(from_path, template_path, dest_path):
 
     template = template.replace("{{ Title }}", title)
     template = template.replace("{{ Content }}", html_string)
+    template = template.replace('href="/', f'href="{basepath}')
+    template = template.replace('src="/', f'src="{basepath}')
 
     with open(dest_path, 'w', encoding="utf-8") as f:
         f.write(template)
@@ -45,22 +47,25 @@ def copy_recursion(source, destination):
         print(f"made file at {destination}")
         shutil.copy(source, destination)
 
-def generate_pages_recursive(dir_path, template_path, dest_path):
+def generate_pages_recursive(dir_path, template_path, dest_path, basepath):
     if os.path.isdir(dir_path):
-
         if not os.path.exists(dest_path):
             print(f"made dir at {dest_path}")
             os.mkdir(dest_path)
 
         for file in os.listdir(dir_path):
             if os.path.isdir(dir_path + "/" + file):
-                generate_pages_recursive(dir_path + "/" + file, template_path, dest_path + "/" + file)
+                generate_pages_recursive(dir_path + "/" + file, template_path, dest_path + "/" + file, basepath)
             elif os.path.isfile(dir_path + "/" + file):
                 if file[-3:] == ".md":
-                    generate_page(dir_path + "/" + file, template_path, dest_path + "/" + file[:-3] + ".html")
+                    generate_page(dir_path + "/" + file, template_path, dest_path + "/" + file[:-3] + ".html", basepath)
 
 def main():
-    copy_to("./static", "./public")
-    generate_pages_recursive("./content", "./template.html", "./public")
+    basepath = "/"
+    if len(sys.argv) >= 2:
+        basepath = sys.argv[1]
+
+    copy_to("./static", "./docs")
+    generate_pages_recursive("./content", "./template.html", "./docs", basepath)
 
 main()
